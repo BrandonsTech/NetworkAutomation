@@ -1,0 +1,8 @@
+- name: Query all AEPs
+  cisco.aci.aci_aep:
+    host: hosts
+    username: admin
+    password: C1sco12345
+    state: query
+  delegate_to: localhost
+  register: query_result
