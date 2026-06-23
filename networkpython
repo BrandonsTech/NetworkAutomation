@@ -1,0 +1,6 @@
+devices = []
+if devices:
+    print("Devices found")
+if not devices:
+    print("No devices found")
+
