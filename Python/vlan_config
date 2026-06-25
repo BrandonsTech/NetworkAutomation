@@ -33,14 +33,14 @@ def vlan_commands(vlan, name):
     return commands
 
 def push_to_device(device, commands):
-    print(f'Pushing Configuration to device: {device} now...')
     for cmd in commands:
         print(f'Issuing the following commands: {cmd}')
 
 for device in devices:
+    print(f'Pushing Configuration to device: {device} now...')
     for vlan in vlans:
         vid = vlan.get('ID')
         vname = vlan.get('Name')
         command = vlan_commands(vid, vname)
-    push_to_device(device, command)
-    print()
+        push_to_device(device, command)
+        print()

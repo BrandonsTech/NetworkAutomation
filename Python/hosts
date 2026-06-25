@@ -1,0 +1,12 @@
+ vlan 10
+    name Accounting
+vlan 20
+    name HR
+vlan 30
+    name Ops
+vlan 40
+    name Warehouse
+vlan 50
+    name IT
+vlan 60
+    name HelpDesk

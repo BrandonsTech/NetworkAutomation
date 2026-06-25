@@ -37,7 +37,8 @@ print(device_1)
 print(device_1.items())
 for key, value in device_1.items():
     print(f"{key}, {value}")
-vendors = set(['cisco', 'arista', 'HP', 'Dell'])
+vendors = ['cisco', 'arista', 'HP', 'Dell']
+approved_vendors = ['cisco']
 print(len(vendors))
 description = ("Router1", "PORTLAND")
 print(type(description))
@@ -51,4 +52,38 @@ elif hostname == "NYC":
 else:
     print ("UNKNOWN DEVICE")
 if 'arista' in vendors:
-    print("Arista is a vendor")
+    print("Arista is deployed")
+
+### Combining for loop with "in" and "not in"
+for vendor in vendors:
+	if vendor not in approved_vendors:
+		print(f'Vendor not approved: {vendor}')
+          
+### BGP Command Dictionary
+BGP_COMMANDS = {
+     'neighbors': 'neighborssssss',
+     'description': 'Description: {}',
+     'network': 'network {}',
+     'neighbor': 'neighbor {}',
+}
+
+BGP_PARAMS = {
+     'description': 'Configured using Python',
+     'network': '10.0.0.0 mask 255.255.255.0',
+     'neighbor': '1.2.3.4'
+}
+
+commands_list = []
+
+### Our first for loop
+
+for feature, value in BGP_PARAMS.items():
+     commandss = BGP_COMMANDS.get(feature).format(value)
+     commands_list.append(commandss)
+commands_list.insert(0, 'interface ethernet1/10')
+print(commands_list)
+
+print(BGP_COMMANDS.get('neighbors'))
+
+for index, each in enumerate(vendors):
+    print(f'{index} {each}')
