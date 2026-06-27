@@ -9,3 +9,5 @@ for index, each in enumerate(groceries):
         continue
     else:
         print("nothing")
+if __name__ == '__main__':
+    print("True")

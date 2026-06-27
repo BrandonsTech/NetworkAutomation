@@ -3,7 +3,9 @@ contents = read_file.read().splitlines()
 print(contents)
 
 vlans = []
-
+"""
+this is a comment
+"""
 for item in contents:
     if 'vlan' in item:
         ID = {}
@@ -17,7 +19,7 @@ for item in contents:
 for vlan in vlans:
     id = vlan.get('id')
     name = vlan.get('name')
-    with open('hostss', 'a') as f:
+    with open('hostss', 'a') as f: #FILE MANIPULATION
         f.write(f'vlan {id}\n')
         f.write(f'   name {name}\n')
 
