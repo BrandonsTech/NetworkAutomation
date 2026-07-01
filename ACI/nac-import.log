@@ -1,0 +1,10 @@
+{"level":"info","time":"2026-07-01T16:10:34-04:00","message":"Validating terraform installation"}
+{"level":"info","time":"2026-07-01T16:10:35-04:00","message":"Running terraform init"}
+{"level":"info","time":"2026-07-01T16:10:36-04:00","message":"Running terraform plan"}
+{"level":"info","time":"2026-07-01T16:10:40-04:00","message":"Analyzing terraform plan output"}
+{"level":"info","time":"2026-07-01T16:10:41-04:00","message":"Found 1 importable changes in plan"}
+{"level":"info","time":"2026-07-01T16:10:41-04:00","message":"Importing 1 objects..."}
+{"level":"info","progress":0,"time":"2026-07-01T16:10:41-04:00","message":"Importing fabricProtPol:uni/fabric/protpol"}
+{"level":"debug","addr":"module.aci.module.aci_vpc_group[0].aci_rest_managed.fabricProtPol","id":"fabricProtPol:uni/fabric/protpol","stateFile":"fabricProtPol_uni_fabric_protpol.tmp.tfstate","time":"2026-07-01T16:10:41-04:00","message":"importing"}
+{"level":"info","time":"2026-07-01T16:10:43-04:00","message":"Merging state..."}
+{"level":"debug","mo":{},"time":"2026-07-01T16:10:43-04:00","message":"merging"}
