@@ -1,0 +1,10 @@
+---
+- name : ethernet1/1
+  description: HR-Port
+  vlan: 10
+  uplink: True
+
+- name : ethernet1/2
+  description: IT-Port
+  vlan: 20
+  uplink: False
