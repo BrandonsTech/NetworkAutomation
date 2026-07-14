@@ -5,6 +5,7 @@ device1 = manager.connect(host='172.16.200.201', port=830, username="bnunez", pa
 
 list(device1.client_capabilities)
 
+######SUBFILTER EXAMPLES
 get_filter = """ #This finds the config of specific interface
 <configuration xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
     <interfaces>
@@ -48,3 +49,14 @@ new_config_filter = """
 
 deleting_config = device1.edit_config(target='candidate', config=new_config_filter) #Deleting config
 print(pushing_config)
+
+##############XPATH FILTER EXAMPLES
+
+nc_get_reply_1 = device1.get(
+    ('xpath', '/interfaces/interface[name="GigabitEthernet1"]/config')
+)
+
+interface_description = nc_get_reply_1.find(
+    './/{http://openconfig.net/yang/interfaces}description'
+    )
+print(interface_description.text)
