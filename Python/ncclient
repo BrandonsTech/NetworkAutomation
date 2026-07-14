@@ -1,0 +1,50 @@
+from ncclient import manager
+from lxml import etree
+
+device1 = manager.connect(host='172.16.200.201', port=830, username="bnunez", password="bnunez", hostkey_verify=False)
+
+list(device1.client_capabilities)
+
+get_filter = """ #This finds the config of specific interface
+<configuration xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <interfaces>
+        <interface>
+            <name>fxp0</name>
+        </interface>
+    </interfaces>
+"""
+nc_get_reply = device1.get(('subtree', get_filter))
+
+as_string = etree.tostring(nc_get_reply.data)
+print(as_string)
+
+config_filter = """
+<config>
+    <configuration>
+        <snmp>
+            <community>
+                <name>myNewCommunity</name>
+                <authorization>read-only</authorization>
+            </community>
+        </snmp>
+    </configuration>
+</config>
+"""
+
+pushing_config = device1.edit_config(target='candidate', config=config_filter) #Editing config
+print(pushing_config)
+
+new_config_filter = """
+<config>
+    <configuration>
+        <snmp>
+            <community operation="delete">          #operation DELETE is key here
+                <name>myNewCommunity</name>
+            </community>
+        </snmp>
+    </configuration>
+</config>
+"""
+
+deleting_config = device1.edit_config(target='candidate', config=new_config_filter) #Deleting config
+print(pushing_config)
