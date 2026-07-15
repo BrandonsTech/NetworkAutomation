@@ -1,0 +1,80 @@
+package main
+
+import (
+    "context"
+	"fmt"
+	"log"
+//gnmic package
+"github.com/openconfig/gnmic/pkg/api"
+// prototext marshals and unmarshals protocol buffer messages as the text proto format
+"google.golang.org/protobuf/encoding/prototext"
+)
+
+func checkError(err Error) {
+	if err != null {
+		log.Fata(err)
+	}
+}
+
+func main() {
+// create a gnmic target
+tg, err := api.NewTarget(
+api.Name("gnmi example"),
+api.Address("eos-spine1:6030"),
+api.Username("admin"),
+api.Password("admin"),
+api.Insecure(true),
+)
+checkError(err)
+
+// cancelable context releases the associated resources, as soon as the
+// operation is completed or canceled.
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+// create a new gNMI client within the base target, using the previous context
+err = tg.CreateGNMIClient(ctx)
+checkError(err)
+defer tg.Close()
+
+// create a GetRequest
+getReq, err := api.NewGetRequest(
+	// Retrieve the full path, all the configuration
+	api.Path("/"), #Pulls the entire full data set with the / path. Making this more specific narrows it.
+	// Define the expected payload encoding
+	api.Encoding("json_ietf"))
+checkError(err)
+fmt.Println(prototext.Format(getReq))
+
+// send the created gNMI GetRequest to the gnmic target
+getResp, err := tg.Get(ctx, getReq)
+	checkError(err)
+	fmt.Println(prototext.Format(getResp))
+
+// Parse the GetRequest response and obtain interface description:
+descriptionGnmiValue := getResp.GetNotification()[0].GetUpdate()[0].GetVal()
+myCurrentDescriptionValue, err := value.ToScalar(descriptionGnmiValue)
+checkError(err)
+
+myCurrentDescriptionStr := myCurrentDescriptionValue.(string)
+fmt.Println("This is my current description: " + myCurrentDescriptionStr)
+
+// Changes Description
+myNewDescription := myCurrentDescriptionStr + "_something_else"
+
+// create a gNMI SetRequest
+setReq, err := api.NewSetRequest(
+	api.Update(
+	// Use XPath to target the description for Management0 interface
+		api.Path("interfaces/interface[name=Management0]/config/description"),
+		// Define the value to update
+		api.Value(myNewDescription, "json_ietf")
+	),
+)
+checkError(err)
+
+// send the created gNMI SetRequest to the created target
+setResp, err := tg.Set(ctx, setReq)
+checkError(err)
+fmt.Println(prototext.Format(setResp))
+}

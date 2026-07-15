@@ -2,6 +2,10 @@ from ncclient import manager
 from lxml import etree
 
 device1 = manager.connect(host='172.16.200.201', port=830, username="bnunez", password="bnunez", hostkey_verify=False)
+junos_device = manager.connect(
+    host='172.16.200.201', port=830, username="bnunez", password="bnunez", hostkey_verify=False,
+    device_params={"name": "junos"}) #DEVICE SPECIFIC 
+
 
 list(device1.client_capabilities)
 
