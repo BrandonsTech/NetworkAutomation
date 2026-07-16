@@ -3,6 +3,7 @@
   hosts: "amers-cpe"
   gather_facts: "no"
   connection: "ansible.netcommon.network_cli"
+  
   tasks:
   - name: "TASK1 - SHOW SNMP CONFIG"
     ios_command:
