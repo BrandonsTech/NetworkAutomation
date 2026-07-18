@@ -1,0 +1,28 @@
+---
+- name: "PLAY 3 - ENSURE JUNOS SNMP CONFIGS ARE DEPLOYED"
+  hosts: junos
+  connection: "ansible.netcommon.netconf"
+  gather_facts: no
+
+  tasks:
+    - name: "DEPLOY CONFIGS FOR JUNOS"
+      junipernetworks.junos.junos_config:
+        src: "./configs/snmp/{{ inventory_hostname }}.cfg" #Deploy config from other file generated
+        # from jinja2 template.
+
+
+- name: "PLAY 4 - ENSURE CISCO (IOS,NXOS) SNMP CONFIGS ARE DEPLOYED"
+  hosts: "iosxe,nxos"
+  connection: "ansible.netcommon.network_cli"
+  gather_facts: no
+    
+  tasks:
+    - name: "DEPLOY CONFIGS FOR IOS"
+      cisco.ios.ios_config:
+        src: "./configs/snmp/{{ inventory_hostname }}.cfg"
+      when: ansible_network_os == 'ios' #Conditional execution
+
+    - name: "DEPLOY CONFIGS FOR NXOS"
+      cisco.nxos.nxos_config:
+        src: "./configs/snmp/{{ inventory_hostname }}.cfg"
+      when: ansible_network_os == 'nxos' #Conditional execution

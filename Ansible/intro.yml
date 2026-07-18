@@ -8,7 +8,7 @@
   - name: "TASK1 - SHOW SNMP CONFIG"
     ios_command:
       commands:
-        - "show run"
+        - "show ip int br"
 
 
   #- name: "TASK 2 - DEPLOY SNMP COMMANDS"

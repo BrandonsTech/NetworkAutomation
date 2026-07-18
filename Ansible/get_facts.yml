@@ -1,0 +1,18 @@
+---
+- name: "Gather Hostname/Version Facts"
+  hosts: "iosxe"
+  connection: "ansible.netcommon.network_cli"
+  gather_facts: no
+
+  tasks:
+    - name: "Collect Facts for IOSXE"
+      cisco.ios.ios_facts:
+      register: device_facts
+      
+    - name: "Debug OS version"
+      debug:
+        var: device_facts.stdout.0 #Debug using specific variable
+
+    - name: "Debug Hostname"
+      debug:
+        var: device_facts['stdout'][0]
