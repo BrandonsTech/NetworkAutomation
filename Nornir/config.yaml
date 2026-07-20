@@ -1,0 +1,10 @@
+---
+inventory: #Defines how Nornir will build its inventory
+    plugin: "SimpleInventory" #Nornir can be extended via various plug-in types. simpleinventory uses local files. Every plug-in has different available options.
+    options:
+        host_file: "inventory/hosts.yaml" #Defining hosts, much like Ansible
+        group_file: "inventory/groups.yaml" #Defining groups
+runner: #Defines how Nornir tasks will be executed
+    plugin: "threaded" #Default/most popular option, which leverages python multithreading.
+    options:
+        num_workers: 20 #Setting Thread count

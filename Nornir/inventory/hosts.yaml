@@ -1,0 +1,24 @@
+---
+csr1:
+  hostname: "csr1"
+  platform: "ios"
+  groups:
+    - "amers-cpe"
+xm1:
+  hostname: "vmx1"
+  platform: "junos"
+  groups:
+    - "emea-cpe"
+eos-spine1:
+  hostname: "eos-spine1"
+  platform: "eos"
+  groups:
+    - "emea-dc"
+nxos-spine1:
+  hostname: "nxos-spine1"
+  platform: "nxos"
+  groups:
+    - "amers-dc"
+  data: #Optional data added to this host.
+    ntp_server: "10.1.200.200"
+    syslog_server: "10.1.200.201
