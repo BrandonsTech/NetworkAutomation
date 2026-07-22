@@ -1,0 +1,90 @@
+---
+name: aci-static-bindings
+
+# Adjust these paths if you place the project folder somewhere other than the
+# repo root (and update `working-directory` below to match).
+on:
+  pull_request:
+    paths:
+      - "aci-static-port-bindings/**"
+      - ".github/workflows/aci-static-bindings.yml"
+  push:
+    branches: [main]
+    paths:
+      - "aci-static-port-bindings/**"
+      - ".github/workflows/aci-static-bindings.yml"
+
+defaults:
+  run:
+    working-directory: aci-static-port-bindings
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # validate — runs on every PR and every push. Touches NO devices; it is
+  # pure data and code validation, so it is safe to run on untrusted PRs.
+  # ---------------------------------------------------------------------------
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Lint YAML
+        run: yamllint data/ playbooks/ inventory/
+
+      - name: Validate data and filter logic
+        run: pytest -v
+
+      - name: Ansible syntax check
+        run: ansible-playbook playbooks/deploy_static_bindings.yml --syntax-check
+
+      - name: ansible-lint
+        run: ansible-lint playbooks/
+
+  # ---------------------------------------------------------------------------
+  # deploy — runs only after a merge to main, and only if `validate` passed.
+  #
+  # Gated by a GitHub Environment named "production"; add a required reviewer
+  # there to force a manual approval before anything reaches the fabric.
+  #
+  # IMPORTANT: GitHub-hosted runners cannot reach a private APIC. Register a
+  # self-hosted runner with network access to the APIC and change `runs-on`
+  # to [self-hosted], or trigger this playbook from your own CD system.
+  # ---------------------------------------------------------------------------
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest          # change to [self-hosted] once your runner is up
+    environment: production
+    env:
+      ACI_HOST: ${{ secrets.ACI_HOST }}
+      ACI_USERNAME: ${{ secrets.ACI_USERNAME }}
+      ACI_PASSWORD: ${{ secrets.ACI_PASSWORD }}
+      ACI_VALIDATE_CERTS: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Preview changes (check mode)
+        run: ansible-playbook playbooks/deploy_static_bindings.yml --check --diff
+
+      - name: Apply changes
+        run: ansible-playbook playbooks/deploy_static_bindings.yml --diff

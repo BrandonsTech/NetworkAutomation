@@ -1,0 +1,32 @@
+---
+# ---------------------------------------------------------------------------
+# Source of truth: static port bindings for tenant "prod_tn", EPG "web_epg".
+#
+# Every binding listed here is reconciled onto the fabric by the deploy
+# playbook. Edit this file, open a PR, and the pipeline validates it before
+# anything touches the APIC. See the top-level README for the full workflow.
+# ---------------------------------------------------------------------------
+
+tenant: prod_tn
+app_profile: web_app
+epg: web_epg
+
+# Applied to every binding below unless a binding overrides it inline.
+defaults:
+  interface_type: switch_port   # switch_port | port_channel | vpc
+  interface_mode: trunk         # trunk | untagged | native  (see README notes)
+  deploy_immediacy: lazy        # lazy (on-demand) | immediate
+
+bindings:
+  # Standard trunk ports carrying VLAN 100.
+  - {pod: 1, leaf: 101, interface: "1/10", encap: 100}
+  - {pod: 1, leaf: 102, interface: "1/10", encap: 100}
+  - {pod: 1, leaf: 103, interface: "1/11", encap: 100}
+
+  # Per-entry override: this one is an access (untagged) port on VLAN 200.
+  - {pod: 1, leaf: 104, interface: "1/20", encap: 200, interface_mode: untagged}
+
+  # Decommission: setting state=absent removes this binding on the next apply.
+  # Once the apply has run, delete the line in a follow-up commit for a clean
+  # history. (See the "Removing bindings" section of the README.)
+  - {pod: 1, leaf: 105, interface: "1/30", encap: 100, state: absent}

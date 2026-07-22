@@ -1,0 +1,52 @@
+---
+# Reconciles one EPG's static port bindings from a single definition file.
+# Input variable: epg_file - absolute path to the definition file.
+#
+# Bindings without a `state` (or with state: present) are ensured present.
+# Bindings with state: absent are removed. Both directions run through the
+# bulk module, so each EPG needs at most two API calls regardless of size.
+
+- name: "Load binding definition | {{ epg_file | basename }}"
+  ansible.builtin.include_vars:
+    file: "{{ epg_file }}"
+    name: epg
+
+- name: "Partition present and absent bindings | {{ epg.epg }}"
+  ansible.builtin.set_fact:
+    _present: >-
+      {{ (epg.bindings | rejectattr('state', 'defined') | list)
+         + (epg.bindings | selectattr('state', 'defined')
+                         | selectattr('state', 'equalto', 'present') | list) }}
+    _absent: >-
+      {{ epg.bindings | selectattr('state', 'defined')
+                      | selectattr('state', 'equalto', 'absent') | list }}
+
+- name: "Ensure present static bindings | {{ epg.epg }}"
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    host: "{{ aci_host }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: "{{ aci_validate_certs }}"
+    tenant: "{{ epg.tenant }}"
+    ap: "{{ epg.app_profile }}"
+    epg: "{{ epg.epg }}"
+    interface_type: "{{ epg.defaults.interface_type | default('switch_port') }}"
+    interface_mode: "{{ epg.defaults.interface_mode | default('trunk') }}"
+    deploy_immediacy: "{{ epg.defaults.deploy_immediacy | default('lazy') }}"
+    interface_configs: "{{ _present | to_interface_configs }}"
+    state: present
+  when: _present | length > 0
+
+- name: "Remove decommissioned static bindings | {{ epg.epg }}"
+  cisco.aci.aci_bulk_static_binding_to_epg:
+    host: "{{ aci_host }}"
+    username: "{{ aci_username }}"
+    password: "{{ aci_password }}"
+    validate_certs: "{{ aci_validate_certs }}"
+    tenant: "{{ epg.tenant }}"
+    ap: "{{ epg.app_profile }}"
+    epg: "{{ epg.epg }}"
+    interface_type: "{{ epg.defaults.interface_type | default('switch_port') }}"
+    interface_configs: "{{ _absent | to_interface_configs }}"
+    state: absent
+  when: _absent | length > 0

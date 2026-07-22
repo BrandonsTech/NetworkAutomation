@@ -1,0 +1,52 @@
+---
+- name: Reconcile ACI static port bindings from source of truth
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  # APIC connection details come from the environment so no credentials ever
+  # live in the repo. In CI these are GitHub Actions secrets; locally you
+  # export them in your shell (see the README).
+  vars:
+    aci_host: "{{ lookup('ansible.builtin.env', 'ACI_HOST') }}"
+    aci_username: "{{ lookup('ansible.builtin.env', 'ACI_USERNAME') }}"
+    aci_password: "{{ lookup('ansible.builtin.env', 'ACI_PASSWORD') }}"
+    aci_validate_certs: >-
+      {{ lookup('ansible.builtin.env', 'ACI_VALIDATE_CERTS')
+         | default('true', true) | bool }}
+    data_dir: "{{ playbook_dir }}/../data"
+
+  pre_tasks:
+    - name: Fail early when APIC connection details are missing
+      ansible.builtin.assert:
+        that:
+          - aci_host | length > 0
+          - aci_username | length > 0
+          - aci_password | length > 0
+        fail_msg: >-
+          ACI_HOST, ACI_USERNAME and ACI_PASSWORD must be set in the
+          environment. See the README for setup instructions.
+        quiet: true
+
+    - name: Discover EPG binding definition files
+      ansible.builtin.find:
+        paths: "{{ data_dir }}"
+        patterns:
+          - "*.yml"
+          - "*.yaml"
+        recurse: true
+      register: binding_files
+
+    - name: Fail when no definition files are found
+      ansible.builtin.assert:
+        that: binding_files.files | length > 0
+        fail_msg: "No binding definition files found under {{ data_dir }}"
+        quiet: true
+
+  tasks:
+    - name: Reconcile each EPG
+      ansible.builtin.include_tasks: tasks/reconcile_epg.yml
+      loop: "{{ binding_files.files | map(attribute='path') | sort }}"
+      loop_control:
+        loop_var: epg_file
+        label: "{{ epg_file | basename }}"
