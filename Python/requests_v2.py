@@ -2,34 +2,38 @@ import requests
 import json
 #import xmltodict
 
-URL = "https://sandboxapicdc.cisco.com"
+URL = "https://172.16.200.220/api/aaaLogin.json"
+BASE_URL = "https://172.16.200.220/api/mo/"
 
-"""
-admin
-!v3G@!4@Y
-"""
-WEATHER_URL = "https://api.weather.gov"
+payload = '{"aaaUser":{"attributes":{"name":"admin","pwd":"Dubzdubz#1"}}}'
 
-def get_function(BASE=WEATHER_URL, TIMEOUT=5):
+def auth(BASE=URL, TIMEOUT=5):
     with requests.Session() as R:
-        #results = {}
-        R.headers.update({"Accept": "application/json"})
+        results = {}
+        #R.headers.update({"Accept": "application/json"})
         try:
-            response = R.get(f"{BASE}/alerts/active/count", timeout=TIMEOUT)
+            response = R.post(f"{BASE}", data=payload, timeout=TIMEOUT, verify=False)
             results = response.json()
         except requests.HTTPError:
             print("HTTP Error")
     return results
 
 
-def post_function():
-    pass
+auth = auth()
+#print(json.dumps(auth, indent=2))
+#print(auth)
+token = auth["imdata"][0]["aaaLogin"]["attributes"]["token"]
+cookie = {"APIC-cookie": token}
 
-def put_function():
-    pass
+def get_tenants():
+    result = {}
+    with requests.Session() as R:
+        try:
+            response = R.get(f"{BASE_URL}uni/tn-common.json", cookies=cookie)
+            result = response.json()
+        except: 
+            pass
+    return result
 
-def delete_function():
-    pass
-
-data = get_function()
-print("PA Alerts:",(data["areas"]["PA"]))
+tenant_data = get_tenants()
+print(json.dumps(tenant_data, indent=2))
