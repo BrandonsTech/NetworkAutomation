@@ -30,9 +30,10 @@ def get_tenants():
     with requests.Session() as R:
         try:
             response = R.get(f"{BASE_URL}uni/tn-common.json", cookies=cookie)
+            response.raise_for_status
             result = response.json()
-        except: 
-            pass
+        except requests.exceptions.ConnectTimeout:
+            print("Request Timed Out")
     return result
 
 tenant_data = get_tenants()
