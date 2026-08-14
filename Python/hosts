@@ -1,4 +1,4 @@
- vlan 10
+vlan 10
     name Accounting
 vlan 20
     name HR
