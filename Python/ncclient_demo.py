@@ -18,6 +18,7 @@ get_filter = """ #This finds the config of specific interface
         </interface>
     </interfaces>
 """
+
 nc_get_reply = device1.get(('subtree', get_filter))
 
 as_string = etree.tostring(nc_get_reply.data)
