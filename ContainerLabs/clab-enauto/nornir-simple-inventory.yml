@@ -1,0 +1,21 @@
+---
+r1:
+    username: admin
+    password: admin
+    platform: cisco_c8000v
+    hostname: 172.20.20.3
+r2:
+    username: admin
+    password: admin
+    platform: cisco_c8000v
+    hostname: 172.20.20.4
+r3:
+    username: admin
+    password: admin
+    platform: cisco_c8000v
+    hostname: 172.20.20.2
+telemetry:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.5
