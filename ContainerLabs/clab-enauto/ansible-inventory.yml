@@ -16,8 +16,8 @@ all:
         clab-enauto-r2:
           ansible_host: 172.20.20.2
         clab-enauto-r3:
-          ansible_host: 172.20.20.5
+          ansible_host: 172.20.20.4
     linux:
       hosts:
         clab-enauto-telemetry:
-          ansible_host: 172.20.20.4
+          ansible_host: 172.20.20.5

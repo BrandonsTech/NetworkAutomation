@@ -1,0 +1,7 @@
+no int loopback98
+
+no int loopback97
+
+no int loopback96
+
+no int loopback95

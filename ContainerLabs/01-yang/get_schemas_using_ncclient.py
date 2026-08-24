@@ -19,16 +19,20 @@ from lxml import etree
     # 6. Unlock Datastore
    # m.unlock(target='candidate')
 
+clab_host = {
+    "host": "172.20.20.3",
+    "port": 830,
+    "username": "admin",
+    "password": "admin",
+    "hostkey_verify": False,
+    "device_params": {"name": "iosxe"}
+}
+
 ROLLBACK = "rollback-on-error"
 
 filter = '''
 <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
-    <interface>
-            <GigabitEthernet>
-            <name>1</name>
-            <description/>
-        </GigabitEthernet>
-    </interface>
+    <interface/>
 </native>
 '''
 payload = '''
@@ -57,24 +61,54 @@ payload_two = '''
 </config>
 '''
 
+native_payload = '''
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
+    <interface>
+      <GigabitEthernet>
+        <name>99</name>
+        <description>NETCONF CREATED THIS</description>
+        <ip>
+          <address>
+            <primary>
+              <address>126.0.0.1</address>
+              <mask>255.255.255.0</mask>
+            </primary>
+          </address>
+        </ip>
+        <negotiation xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-ethernet">
+          <auto>true</auto>
+        </negotiation>
+      </Loopback>
+    </interface>
+  </native>
+</config>
+'''
+
+
+
+def get():
+    with manager.connect(**clab_host) as m:
+        schema = m.get(filter=("subtree", filter))
+        print(str(etree.tostring(schema.data, pretty_print=True).decode()))
 
 def get_conf():
-    with manager.connect(host="172.20.20.3", port=830, username="admin", password="admin", hostkey_verify=False, device_params={"name": "iosxe"}) as m:
-        schema = m.get_config(source="candidate",filter=("subtree", filter))
+    with manager.connect(**clab_host) as m:
+        schema = m.get_config(source="running",filter=("subtree", filter))
         print(str(etree.tostring(schema.data, pretty_print=True).decode()))
 
 def getting_schema():
-    #with manager.connect(host="172.20.20.3", port=830, username="admin", password="admin", hostkey_verify=False, device_params={"name": "iosxe"}) as m:
-    #schema = m.get_schema('XXXXXXXXX')
-    #print(str(etree.tostring(schema.data, pretty_print=True).decode()))
+    with manager.connect(**clab_host) as m:
+        schema = m.get_schema('Cisco-IOX-XE-native')
+        print(str(etree.tostring(schema.data, pretty_print=True).decode()))
     pass
     
 def push_config():
-    with manager.connect(host="172.20.20.3", port=830, username="admin", password="admin", hostkey_verify=False, device_params={"name": "iosxe"}) as m:
+    with manager.connect(**clab_host) as m:
         with m.locked(target="candidate"):
             m.discard_changes()
             try: #THIS IS MEANT TO SUCCEED
-                schema = m.edit_config(config=payload, target="candidate") 
+                schema = m.edit_config(config=native_payload, target="candidate", error_option=ROLLBACK) 
                 print("PAYLOAD ONE HAS BEEN DEPLOYED")
             except RPCError as R:
                 print(f"failed and rolling back! Error: {R.tag}, {R.message}, {R.severity}")
@@ -99,16 +133,15 @@ def push_config():
     '''
 
 def get_capabilities():
-     with manager.connect(host="172.20.20.3", port=830, username="admin", password="admin", hostkey_verify=False, device_params={"name": "iosxe"}) as m:
+     with manager.connect(**clab_host) as m:
         for capability in m.server_capabilities:
             print(capability)
 
 
+#push_config()
+#get()
+#get_conf()
 
-push_config()
-
-get_conf()
-
-#get_capabilities()
+get_capabilities()
 
 #getting_schema()
