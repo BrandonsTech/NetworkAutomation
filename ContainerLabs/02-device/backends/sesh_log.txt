@@ -1,0 +1,17 @@
+
+
+r2#
+r2#
+r2#show ip int br
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       10.0.0.15       YES TFTP   up                    up      
+GigabitEthernet2       unassigned      YES unset  ********istratively down down    
+GigabitEthernet3       unassigned      YES unset  ********istratively down down    
+Loopback96             128.0.0.4       YES manual up                    up      
+Loopback97             128.0.0.3       YES manual up                    up      
+Loopback98             128.0.0.2       YES manual up                    up      
+Loopback99             128.0.0.1       YES manual up                    up      
+VirtualPortGroup0      192.168.35.1    YES TFTP   up                    up      
+r2#
+r2#show run | sec syslog
+r2#
