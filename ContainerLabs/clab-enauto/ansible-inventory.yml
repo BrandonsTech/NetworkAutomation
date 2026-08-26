@@ -12,12 +12,12 @@ all:
         ansible_password: admin
       hosts:
         clab-enauto-r1:
-          ansible_host: 172.20.20.5
-        clab-enauto-r2:
           ansible_host: 172.20.20.4
+        clab-enauto-r2:
+          ansible_host: 172.20.20.5
         clab-enauto-r3:
-          ansible_host: 172.20.20.2
+          ansible_host: 172.20.20.3
     linux:
       hosts:
         clab-enauto-telemetry:
-          ansible_host: 172.20.20.3
+          ansible_host: 172.20.20.2

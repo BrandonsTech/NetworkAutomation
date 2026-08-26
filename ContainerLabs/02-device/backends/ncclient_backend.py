@@ -3,7 +3,7 @@ from ncclient import manager
 
 
 R1 = {
-    "host": "172.20.20.5",
+    "host": "172.20.20.4",
     "port": 830,
     "username": "admin",
     "password": "admin",
@@ -11,7 +11,7 @@ R1 = {
 }
 
 R2 = {
-    "host": "172.20.20.4",
+    "host": "172.20.20.5",
     "port": 830,
     "username": "admin",
     "password": "admin",
@@ -20,7 +20,7 @@ R2 = {
 }
 
 R3 = {
-    "host": "172.20.20.2",
+    "host": "172.20.20.3",
     "port": 830,
     "username": "admin",
     "password": "admin",
