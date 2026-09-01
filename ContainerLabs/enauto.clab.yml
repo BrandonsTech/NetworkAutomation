@@ -12,14 +12,22 @@ topology:
     r3:
       kind: cisco_c8000v
       image: vrnetlab/cisco_c8000v:17.16.01a
+      startup-config: configs/r3.cfg
     telemetry:
       kind: linux
-      image: telegraf:latest
-      binds: [ ./telegraf.conf:/etc/telegraf/telegraf.conf:ro ]
-    #ztp:
-    #  kind: linux
-    #  image: nginx:alpine
-   #   binds: [ ./ztp-www:/usr/share/nginx/html:ro ]
+      image: telegraf:1.30
+      binds:
+        - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    ztp:
+      kind: linux
+      image: nginx:alpine
+      ports:
+        - 8080:80
+      binds:
+        - ./ztp-www:/usr/share/nginx/html:ro
+   # dns:
+    #  image: strm/dnsmasq
+
   links:
     - endpoints: ["r1:Gi2", "r2:Gi2"]
     - endpoints: ["r2:Gi3", "r3:Gi2"]
