@@ -1,0 +1,32 @@
+---
+- name: PLAY 1 - Deploy EPG to Multiple Interfaces
+  hosts: apic1
+  connection: local
+
+  tasks:
+    - name: Add EPG To Multiple Interfaces
+      cisco.aci.aci_bulk_static_binding_to_epg:
+        host: "{{ ansible_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+        tenant: TC_RND_LAB
+        ap: TC_RND_AP
+        epg: EPG_0003
+        encap_id: 3
+        interface_mode: trunk
+        deploy_immediacy: lazy
+        state: present
+        interface_configs:
+          - interface: 1/1
+            leafs: 102
+            pod: 1
+          - interface: 1/3
+            leafs: 102
+            pod: 1
+          - interface: 1/5
+            leafs: 102
+            pod: 1
+          - interface: 1/6
+            leafs: 102
+            pod: 1

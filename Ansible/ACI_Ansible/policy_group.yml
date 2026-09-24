@@ -1,0 +1,47 @@
+---
+- name: PLAY 1 - Create Policy Groups
+  hosts: apic1
+  connection: local
+
+  tasks:
+    - name: Create a Port Channel (PC) Interface Policy Group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        host: "{{ ansible_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+        lag_type: link
+        policy_group: new_pc
+        description: new_pc
+        link_level_policy: LINK_Auto_Negotiate
+        cdp_policy: CDP_Disabled
+        lldp_policy: LLDP_Enabled
+        port_channel_policy: PC_LACP_Active
+        state: present
+
+    - name: Create a Virtual Port Channel (VPC) Interface Policy Group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        host: "{{ ansible_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+        lag_type: node
+        policy_group: new_vpc
+        link_level_policy: LINK_Auto_Negotiate
+        cdp_policy: CDP_Disabled
+        lldp_policy: LLDP_Enabled
+        port_channel_policy: PC_LACP_Active
+        state: absent
+
+    - name: Create a Leaf Access Port Policy Group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        host: "{{ ansible_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+        lag_type: leaf
+        policy_group: new_accesspg
+        link_level_policy: LINK_Auto_Negotiate
+        cdp_policy: CDP_Enabled
+        lldp_policy: LLDP_Enabled
+        state: absent

@@ -1,0 +1,10 @@
+- name: Playbook to take snapshot
+  hosts: apic1
+  connection: local
+  tasks:
+    cisco.aci.aci_config_snapshot:
+      host: "{{ invetory_hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      state: present
+      export_policy: config_backup

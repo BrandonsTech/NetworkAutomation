@@ -1,0 +1,15 @@
+- name: Playbook for ACi Snapshots
+  hosts: apic1
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: take Snapshot
+    cisco.aci.aci_config_snapshot:
+      host: "{{ ansible_host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      export_policy: config_backupp
+      validate_certs: false
+      #snapshot: run-2026-07-23T12-20-11
+      state: present
+...

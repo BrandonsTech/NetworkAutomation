@@ -1,0 +1,23 @@
+---
+- name: PLAY 1 - Deploy EPG(s) to Single Interface
+  hosts: apic1
+  connection: local
+
+  tasks:
+    - name: Modify EPGs
+      cisco.aci.aci_static_binding_to_epg:
+        host: "{{ ansible_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+        tenant: TC_RND_LAB
+        ap: TC_RND_AP
+        #epg: EPG_0003
+        #encap_id: 3
+        #deploy_immediacy: lazy
+        state: query
+        pod: 1
+        leafs: 102
+        interface: 1/6
+        interface_type: switch_port
+        #interface_mode: trunk

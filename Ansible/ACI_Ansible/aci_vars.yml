@@ -1,0 +1,45 @@
+# Everything you edit lives here. Plan: ansible-playbook aci.yml --check   Apply: ansible-playbook aci.yml
+#
+# Any item takes `state: absent` to remove it (default: present). Lists make anything bulk.
+# Port syntax:  101/1/10 = access port | 101/pc_db01 = port-channel | 101-102/vpc_esx01 = vPC
+# EPG syntax:   TENANT/AP/EPG
+
+apic:
+  host: 10.30.3.108
+  username: admin
+  password: Pjm12345!@#$%
+  validate_certs: false
+
+policy_groups:                     # PC/vPC interface policy groups
+  - name: vpc_esx01
+    type: vpc                      # pc | vpc
+    description: testing ansible
+    cdp: CDP_Enabled
+    aep: RND_LAB_AEP              # optional, each names an existing object:
+    lacp: PC_LACP_Active           #   aep, link, lacp, cdp, lldp, mcp, stp, l2
+    link: LINK_Auto_Negotiate
+    lldp: LLDP_Enabled
+
+interfaces:                        # attach a policy group to leaf ports, or detach with state: absent
+  - ports: [102/1/2]
+    policy_group: vpc_esx01
+    description: ESX01 vmnic2/vmnic3
+  - ports: [102/1/1]
+    policy_group: default_access_policy
+    state: present
+
+bindings:                          # static EPG bindings: one EPG onto one or many ports
+ # - epg: PROD/WEB/WEB_EPG
+  #  vlan: 110
+#    ports: [101-102/vpc_esx01, 103/1/33]
+  - epg: TC_RND_LAB/TC_RND_AP/EPG_0010
+    vlan: 10
+    ports: [101-102/vpc_esx01]
+ # - epg: PROD/MGMT/MGMT_EPG
+#    vlan: 100
+#    mode: native                   # trunk (default) | native (802.1P) | untagged
+#    ports: [101-102/vpc_esx01]
+#  - epg: PROD/OLD/OLD_EPG
+ #   vlan: 300
+ #   ports: [104/1/7]
+#    state: absent

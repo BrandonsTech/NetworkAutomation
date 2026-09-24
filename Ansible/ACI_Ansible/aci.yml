@@ -1,0 +1,160 @@
+# Setup once:  pip install ansible-core && ansible-galaxy collection install cisco.aci
+# Plan:        ansible-playbook aci.yml --check          (validates, sends no config)
+# Apply:       ansible-playbook aci.yml                  (validates, snapshots, applies)
+# Other file:  add -e vars_file=<file>.yml
+- name: Apply ACI port changes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: ["{{ vars_file | default('aci_vars.yml') }}"]
+  module_defaults:
+    group/cisco.aci.all:
+      host: "{{ apic.host }}"
+      username: "{{ apic.username }}"
+      password: "{{ apic.password }}"
+      validate_certs: "{{ apic.validate_certs }}"
+  vars:
+    policy_rn: {aep: attentp, link: hintfpol, lacp: lacplagp, cdp: cdpIfP, lldp: lldpIfP, mcp: mcpIfP, stp: ifPol, l2: l2IfP}
+    # DNs the additions point at, minus what this file creates. Each must already exist on the APIC.
+    refs: >-
+      {%- set r, new = [], [] -%}
+      {%- for pg in policy_groups | default([]) if pg.state | default('present') == 'present' -%}
+        {%- set _ = new.append(pg.name) -%}
+        {%- for key, rn in policy_rn.items() if key in pg -%}
+          {%- set _ = r.append('uni/infra/' ~ rn ~ '-' ~ pg[key]) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {%- for i in interfaces | default([]) if i.state | default('present') == 'present' and i.policy_group not in new -%}
+        {%- set _ = r.append('uni/infra/funcprof/accbundle-' ~ i.policy_group) -%}
+      {%- endfor -%}
+      {%- for b in bindings | default([]) if b.state | default('present') == 'present' -%}
+        {%- set tenant, ap, epg = b.epg.split('/') -%}
+        {%- set _ = r.append('uni/tn-' ~ tenant ~ '/ap-' ~ ap ~ '/epg-' ~ epg) -%}
+        {%- for port in b.ports -%}
+          {%- set leafs, iface = port.split('/', 1) -%}
+          {%- if '/' in iface -%}
+            {%- set _ = r.append('topology/pod-' ~ b.pod | default(1) ~ '/paths-' ~ leafs ~ '/pathep-[eth' ~ iface ~ ']') -%}
+          {%- elif iface not in new -%}
+            {%- set _ = r.append('uni/infra/funcprof/accbundle-' ~ iface) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{- r | unique | sort -}}
+
+  tasks:
+    - name: Validate - structure of the vars file
+      ansible.builtin.validate_argument_spec:
+        argument_spec:
+          apic:
+            type: dict
+            required: true
+            options:
+              host: {type: str, required: true}
+              username: {type: str, required: true}
+              password: {type: str, required: true, no_log: true}
+              validate_certs: {type: bool, default: true}
+          policy_groups:
+            type: list
+            elements: dict
+            options:
+              name: {type: str, required: true}
+              type: {type: str, required: true, choices: [pc, vpc]}
+              state: {type: str, choices: [present, absent], default: present}
+              description: {type: str}
+              aep: {type: str}
+              link: {type: str}
+              lacp: {type: str}
+              cdp: {type: str}
+              lldp: {type: str}
+              mcp: {type: str}
+              stp: {type: str}
+              l2: {type: str}
+          interfaces:
+            type: list
+            elements: dict
+            required_if: [[state, present, [policy_group]]]
+            options:
+              ports: {type: list, elements: str, required: true}
+              policy_group: {type: str}
+              description: {type: str}
+              state: {type: str, choices: [present, absent], default: present}
+          bindings:
+            type: list
+            elements: dict
+            options:
+              epg: {type: str, required: true}
+              vlan: {type: int, required: true}
+              ports: {type: list, elements: str, required: true}
+              mode: {type: str, choices: [trunk, native, untagged]}
+              pod: {type: int}
+              immediacy: {type: str, choices: [immediate, lazy]}
+              state: {type: str, choices: [present, absent], default: present}
+
+    - name: Validate - look up everything the additions depend on
+      cisco.aci.aci_rest:
+        path: "/api/mo/{{ item }}.json"
+        method: get
+      loop: "{{ refs }}"
+      register: found
+      check_mode: false
+
+    - name: Validate - nothing is missing
+      ansible.builtin.assert:
+        that: missing | length == 0
+        fail_msg: "Not found on the APIC: {{ missing }}"
+        quiet: true
+      vars:
+        missing: "{{ found.results | rejectattr('imdata') | map(attribute='item') | list }}"
+
+    - name: Snapshot the fabric (skipped in check mode)
+      cisco.aci.aci_config_snapshot:
+        export_policy: ansible-pre-change
+        max_count: 10
+
+    - name: Policy groups
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        policy_group: "{{ item.name }}"
+        lag_type: "{{ {'pc': 'link', 'vpc': 'node'}[item.type] }}"
+        description: "{{ item.description | default(omit) }}"
+        aep: "{{ item.aep | default(omit) }}"
+        link_level_policy: "{{ item.link | default(omit) }}"
+        port_channel_policy: "{{ item.lacp | default(omit) }}"
+        cdp_policy: "{{ item.cdp | default(omit) }}"
+        lldp_policy: "{{ item.lldp | default(omit) }}"
+        mcp_policy: "{{ item.mcp | default(omit) }}"
+        stp_interface_policy: "{{ item.stp | default(omit) }}"
+        l2_interface_policy: "{{ item.l2 | default(omit) }}"
+        state: "{{ item.state | default('present') }}"
+      loop: "{{ policy_groups | default([]) }}"
+      loop_control: {label: "{{ item.state | default('present') }} {{ item.name }}"}
+
+    - name: Interfaces
+      cisco.aci.aci_interface_config:
+        node: "{{ item.1.split('/')[0] }}"
+        interface: "{{ item.1.split('/', 1)[1] }}"
+        interface_type: pc_or_vpc
+        policy_group: "{{ item.0.policy_group | default(omit) }}"
+        description: "{{ item.0.description | default(omit) }}"
+        state: "{{ item.0.state | default('present') }}"
+      loop: "{{ interfaces | default([]) | subelements('ports') }}"
+      loop_control: {label: "{{ item.0.state | default('present') }} {{ item.1 }} {{ item.0.policy_group | default('') }}"}
+
+    - name: Static EPG bindings
+      cisco.aci.aci_static_binding_to_epg:
+        tenant: "{{ epg[0] }}"
+        ap: "{{ epg[1] }}"
+        epg: "{{ epg[2] }}"
+        encap_id: "{{ item.0.vlan }}"
+        interface_mode: "{{ item.0.mode | default('trunk') }}"
+        interface_type: "{{ 'vpc' if '-' in leafs else 'switch_port' if '/' in iface else 'port_channel' }}"
+        pod_id: "{{ item.0.pod | default(1) }}"
+        leafs: "{{ leafs.split('-') }}"
+        interface: "{{ iface }}"
+        deploy_immediacy: "{{ item.0.immediacy | default('immediate') }}"
+        state: "{{ item.0.state | default('present') }}"
+      loop: "{{ bindings | default([]) | subelements('ports') }}"
+      loop_control: {label: "{{ item.0.state | default('present') }} {{ item.0.epg }} vlan-{{ item.0.vlan }} -> {{ item.1 }}"}
+      vars:
+        epg: "{{ item.0.epg.split('/') }}"
+        leafs: "{{ item.1.split('/')[0] }}"
+        iface: "{{ item.1.split('/', 1)[1] }}"

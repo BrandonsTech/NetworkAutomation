@@ -1,0 +1,47 @@
+---
+- name: PLAY 1 - Create Policy Groups
+  hosts: apic1
+  connection: local
+
+  module_defaults:
+    group/cisco.aci.all:
+      host: "{{ ansible_host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      validate_certs: false
+
+
+  tasks:
+    - name: Create a Port Channel (PC) Interface Policy Group
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        lag_type: link
+        policy_group: new_pc
+        description: new_pc
+        link_level_policy: LINK_Auto_Negotiate
+        cdp_policy: CDP_Disabled
+        lldp_policy: LLDP_Enabled
+        port_channel_policy: PC_LACP_Active
+        state: absent
+
+    - name: Apply EPGs to Created Port-Channel
+      cisco.aci.aci_static_binding_to_epg:
+        tenant: TC_RND_LAB
+        ap: TC_RND_AP
+        epg: EPG_0004
+        encap_id: 4
+        deploy_immediacy: lazy
+        pod: 1
+        leafs: 102
+        interface: new_pc
+        interface_type: port_channel
+        interface_mode: access
+        state: absent
+
+    - name: Apply PC to Interface
+      cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+        interface_profile: TC_RND_L_102
+        access_port_selector: E1_01
+        policy_group: new_pc
+        port_blk: 1
+        interface_type: port_channel
+        state: absent
