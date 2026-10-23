@@ -1,0 +1,432 @@
+{
+  "name": "NEXUS-LAB",
+  "type": "clab",
+  "clab": {
+    "config": {
+      "prefix": "clab",
+      "mgmt": {
+        "network": "clab",
+        "bridge": "br-003c65afc89c",
+        "ipv4-subnet": "172.20.20.0/24",
+        "ipv4-gw": "172.20.20.1",
+        "external-access": true,
+        "ipam": {
+          "provider": "containerlab"
+        }
+      }
+    }
+  },
+  "ssh-pub-keys": ["ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGsOAr7PKqnWynC36VI7jC3RaJednaNXNLGnoHosPA3JGi7WUv+Bjd34HT+so4iEe88+2QdzIWEC8OKCFmpkPoY=","ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeE6HXuXJpap6OPAMcFLWiKliGgjkaZ6DKMtuDhEI0k","ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINIi+fQLSQn2VEZa+TE4Rw0+TrSiFLrqIH1OfSE9Yol5"],
+  "nodes": {
+    "host1": {
+      "index": "0",
+      "shortname": "host1",
+      "longname": "clab-NEXUS-LAB-host1",
+      "fqdn": "host1.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/host1",
+      "kind": "linux",
+      "image": "alpine:latest",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.31",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/host1",
+        "clab-node-longname": "clab-NEXUS-LAB-host1",
+        "clab-node-name": "host1",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "host2": {
+      "index": "1",
+      "shortname": "host2",
+      "longname": "clab-NEXUS-LAB-host2",
+      "fqdn": "host2.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/host2",
+      "kind": "linux",
+      "image": "alpine:latest",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.32",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/host2",
+        "clab-node-longname": "clab-NEXUS-LAB-host2",
+        "clab-node-name": "host2",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "r1": {
+      "index": "2",
+      "shortname": "r1",
+      "longname": "clab-NEXUS-LAB-r1",
+      "fqdn": "r1.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r1",
+      "kind": "cisco_n9kv",
+      "image": "vrnetlab/cisco_n9kv:10.5.2.F",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.11",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_n9kv",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r1",
+        "clab-node-longname": "clab-NEXUS-LAB-r1",
+        "clab-node-name": "r1",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "r2": {
+      "index": "3",
+      "shortname": "r2",
+      "longname": "clab-NEXUS-LAB-r2",
+      "fqdn": "r2.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r2",
+      "kind": "cisco_n9kv",
+      "image": "vrnetlab/cisco_n9kv:10.5.2.F",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.12",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_n9kv",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r2",
+        "clab-node-longname": "clab-NEXUS-LAB-r2",
+        "clab-node-name": "r2",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "r3": {
+      "index": "4",
+      "shortname": "r3",
+      "longname": "clab-NEXUS-LAB-r3",
+      "fqdn": "r3.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r3",
+      "kind": "cisco_n9kv",
+      "image": "vrnetlab/cisco_n9kv:10.5.2.F",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.13",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_n9kv",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r3",
+        "clab-node-longname": "clab-NEXUS-LAB-r3",
+        "clab-node-name": "r3",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "r4": {
+      "index": "5",
+      "shortname": "r4",
+      "longname": "clab-NEXUS-LAB-r4",
+      "fqdn": "r4.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r4",
+      "kind": "cisco_n9kv",
+      "image": "vrnetlab/cisco_n9kv:10.5.2.F",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.14",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_n9kv",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/r4",
+        "clab-node-longname": "clab-NEXUS-LAB-r4",
+        "clab-node-name": "r4",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "switch1": {
+      "index": "6",
+      "shortname": "switch1",
+      "longname": "clab-NEXUS-LAB-switch1",
+      "fqdn": "switch1.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/switch1",
+      "kind": "cisco_iol",
+      "image": "vrnetlab/cisco_iol:L2-17.18.02",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.21",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_iol",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/switch1",
+        "clab-node-longname": "clab-NEXUS-LAB-switch1",
+        "clab-node-name": "switch1",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    },
+    "switch2": {
+      "index": "7",
+      "shortname": "switch2",
+      "longname": "clab-NEXUS-LAB-switch2",
+      "fqdn": "switch2.NEXUS-LAB.io",
+      "group": "",
+      "labdir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/switch2",
+      "kind": "cisco_iol",
+      "image": "vrnetlab/cisco_iol:L2-17.18.02",
+      "mgmt-net": "clab",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.22",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-003c65afc89c",
+        "clab-node-group": "",
+        "clab-node-kind": "cisco_iol",
+        "clab-node-lab-dir": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/clab-NEXUS-LAB/switch2",
+        "clab-node-longname": "clab-NEXUS-LAB-switch2",
+        "clab-node-name": "switch2",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/git/NetworkAutomation/ContainerLabs/NEXUS-LAB/NEXUS-LAB.clab.yml",
+        "containerlab": "NEXUS-LAB"
+      },
+      "port-bindings": [
+      ]
+    }
+  },
+  "links": [
+    {
+      "endpoints": {
+        "a": {
+          "node": "r1",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:f1:7d:43",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r2",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:55:95:36",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "r1",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:e0:29:eb",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r3",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:fb:13:81",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "r2",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:80:ad:17",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r4",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:19:2d:2b",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "r3",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:a9:ba:c4",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r4",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:82:e0:67",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch1",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:9d:b1:0e",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r1",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:79:2c:f1",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch1",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:01:9b:f2",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r2",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:7b:aa:e5",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch2",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:6b:8e:24",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r3",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:30:dd:10",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch2",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:c6:48:28",
+          "peer": "z"
+        },
+        "z": {
+          "node": "r4",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:60:8b:7e",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch1",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:9b:39:8f",
+          "peer": "z"
+        },
+        "z": {
+          "node": "host1",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:1d:88:9e",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "switch2",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:96:e2:31",
+          "peer": "z"
+        },
+        "z": {
+          "node": "host2",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:cf:4d:ef",
+          "peer": "a"
+        }
+      }
+    }
+  ]
+}

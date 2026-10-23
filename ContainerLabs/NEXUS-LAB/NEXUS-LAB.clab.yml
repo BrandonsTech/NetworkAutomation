@@ -1,0 +1,63 @@
+name: NEXUS-LAB
+
+mgmt:
+  network: clab                 # attach NetBox, CI runner, Prometheus etc. to this docker network
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  nodes:
+    r1:
+      kind: cisco_n9kv
+      image: vrnetlab/cisco_n9kv:10.5.2.F
+      mgmt-ipv4: 172.20.20.11
+      startup-config: configs/r1.txt
+    r2:
+      kind: cisco_n9kv
+      image: vrnetlab/cisco_n9kv:10.5.2.F
+      mgmt-ipv4: 172.20.20.12
+      startup-config: configs/r2.txt
+    r3:
+      kind: cisco_n9kv
+      image: vrnetlab/cisco_n9kv:10.5.2.F
+      mgmt-ipv4: 172.20.20.13
+      startup-config: configs/r3.txt
+    r4:
+      kind: cisco_n9kv
+      image: vrnetlab/cisco_n9kv:10.5.2.F
+      mgmt-ipv4: 172.20.20.14
+      startup-config: configs/r4.txt
+    switch1:
+      kind: cisco_iol
+      image: vrnetlab/cisco_iol:L2-17.18.02
+      mgmt-ipv4: 172.20.20.21
+      startup-config: configs/switch1.txt
+    switch2:
+      kind: cisco_iol
+      image: vrnetlab/cisco_iol:L2-17.18.02
+      mgmt-ipv4: 172.20.20.22
+      startup-config: configs/switch2.txt
+    host1:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.31
+      exec:
+        - ip addr add 10.100.2.10/24 dev eth1
+        - ip route add 10.100.0.0/16 via 10.100.2.1
+    host2:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.32
+      exec:
+        - ip addr add 10.100.2.10/24 dev eth1
+        - ip route add 10.100.0.0/16 via 10.100.2.1
+  links:
+    - endpoints: ["r1:eth2", "r2:eth2"]
+    - endpoints: ["r1:eth1", "r3:eth1"]
+    - endpoints: ["r2:eth1", "r4:eth1"]
+    - endpoints: ["r3:eth2", "r4:eth2"]
+    - endpoints: ["switch1:e0/1", "r1:eth3"]
+    - endpoints: ["switch1:e0/2", "r2:eth3"]
+    - endpoints: ["switch2:e0/1", "r3:eth3"]
+    - endpoints: ["switch2:e0/2", "r4:eth3"]
+    - endpoints: ["switch1:e0/3", "host1:eth1"]
+    - endpoints: ["switch2:e0/3", "host2:eth1"]

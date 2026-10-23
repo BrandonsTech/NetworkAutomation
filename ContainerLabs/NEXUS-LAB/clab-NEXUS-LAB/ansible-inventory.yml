@@ -1,0 +1,37 @@
+all:
+  vars:
+    # The generated inventory is assumed to be used from the clab host.
+    # Hence no http proxy should be used. Therefore we make sure the http
+    # module does not attempt using any global http proxy.
+    ansible_httpapi_use_proxy: false
+  children:
+    cisco_iol:
+      vars:
+        # ansible_connection: set ansible_connection variable if required
+        ansible_user: admin
+        ansible_password: admin
+      hosts:
+        clab-NEXUS-LAB-switch1:
+          ansible_host: 172.20.20.21
+        clab-NEXUS-LAB-switch2:
+          ansible_host: 172.20.20.22
+    cisco_n9kv:
+      vars:
+        # ansible_connection: set ansible_connection variable if required
+        ansible_user: admin
+        ansible_password: admin
+      hosts:
+        clab-NEXUS-LAB-r1:
+          ansible_host: 172.20.20.11
+        clab-NEXUS-LAB-r2:
+          ansible_host: 172.20.20.12
+        clab-NEXUS-LAB-r3:
+          ansible_host: 172.20.20.13
+        clab-NEXUS-LAB-r4:
+          ansible_host: 172.20.20.14
+    linux:
+      hosts:
+        clab-NEXUS-LAB-host1:
+          ansible_host: 172.20.20.31
+        clab-NEXUS-LAB-host2:
+          ansible_host: 172.20.20.32
