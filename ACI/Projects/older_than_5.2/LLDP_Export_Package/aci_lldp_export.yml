@@ -1,0 +1,174 @@
+---
+# aci_lldp_export.yml
+#
+# Exports every LLDP adjacency (class lldpAdjEp) from one or more Cisco ACI
+# fabrics into one CSV and one JSON file.
+#
+#   * One inventory host = one fabric (an APIC cluster). Fabrics are queried in
+#     parallel; a fabric that fails (bad creds, APIC unreachable) is left out of
+#     the export and shows as failed in the recap, the rest still get written.
+#   * Results are paged (APIC refuses class queries over ~100k objects and times
+#     out slow ones at 90 s), then sorted by fabric / node / port.
+#
+# Requirements: ansible-core >= 2.16 and the cisco.aci collection
+#   ansible-galaxy collection install cisco.aci
+#
+# Usage:
+#   ansible-playbook -i inventory.yml aci_lldp_export.yml
+#   ansible-playbook -i inventory.yml aci_lldp_export.yml --limit dc1-fabric
+#   ansible-playbook -i inventory.yml aci_lldp_export.yml -e include_fabric_links=false
+
+- name: Export LLDP neighbors from ACI fabrics
+  hosts: apic
+  connection: local
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    fabric_name: "{{ inventory_hostname }}"   # value written to the 'fabric' column
+    include_fabric_links: true                 # false = drop leaf<->spine / leaf<->APIC links
+    lldp_page_size: 1000                       # objects per API call
+    export_dir: "{{ playbook_dir }}/exports"
+    export_columns:                            # CSV column order; remove or reorder freely
+      - fabric
+      - pod
+      - node_id
+      - node_name
+      - node_role
+      - local_interface
+      - neighbor_name
+      - neighbor_port_id
+      - neighbor_port_desc
+      - neighbor_mgmt_ip
+      - neighbor_chassis_id
+      - neighbor_capabilities
+      - link_type
+      - neighbor_description
+
+  module_defaults:
+    group/cisco.aci.all:
+      host: "{{ apic_host }}"
+      username: "{{ apic_username }}"
+      password: "{{ apic_password | default(omit) }}"
+      private_key: "{{ apic_private_key | default(omit) }}"            # signature auth (optional)
+      certificate_name: "{{ apic_certificate_name | default(omit) }}"
+      validate_certs: "{{ apic_validate_certs | default(true) }}"
+
+  tasks:
+    - name: Get fabric nodes (node id -> name / role)
+      cisco.aci.aci_rest:
+        method: get
+        path: /api/node/class/fabricNode.json
+      register: node_query
+      check_mode: false
+
+    - name: Count LLDP adjacencies
+      cisco.aci.aci_rest:
+        method: get
+        path: /api/node/class/lldpAdjEp.json?rsp-subtree-include=count
+      register: lldp_count
+      check_mode: false
+
+    - name: Build node lookups and paging plan
+      ansible.builtin.set_fact:
+        node_names: "{{ nodes | items2dict(key_name='id', value_name='name') }}"
+        node_roles: "{{ nodes | items2dict(key_name='id', value_name='role') }}"
+        fabric_node_names: "{{ nodes | map(attribute='name') | map('lower') | list }}"
+        lldp_pages: "{{ ((lldp_count.imdata[0].moCount.attributes.count | int) / (lldp_page_size | int)) | round(0, 'ceil') | int }}"
+      vars:
+        nodes: "{{ node_query.imdata | map(attribute='fabricNode.attributes') | list }}"
+
+    - name: Fetch LLDP adjacencies
+      cisco.aci.aci_rest:
+        method: get
+        path: /api/node/class/lldpAdjEp.json?order-by=lldpAdjEp.dn&page-size={{ lldp_page_size }}&page={{ item }}
+      loop: "{{ range(lldp_pages | int) | list }}"
+      loop_control:
+        label: "page {{ item + 1 }}/{{ lldp_pages }}"
+      register: lldp_query
+      until: lldp_query is succeeded   # Cisco's guidance for 503 "destination not available" is to retry
+      retries: 3
+      delay: 5
+      check_mode: false
+
+    # DN format: topology/pod-1/node-101/sys/lldp/inst/if-[eth1/49]/adj-1
+    - name: Normalise adjacencies into export rows
+      ansible.builtin.set_fact:
+        lldp_rows: >-
+          {%- set ns = namespace(rows=[]) -%}
+          {%- for mo in adjacencies -%}
+            {%- set a = mo.lldpAdjEp.attributes -%}
+            {%- set dn = a.dn.split('/') -%}
+            {%- set node_id = dn[2] | replace('node-', '') -%}
+            {%- set iface = a.dn.split('[')[1].split(']')[0] -%}
+            {%- set nbr = a.sysName | default('') | trim -%}
+            {%- set link_type = 'fabric' if nbr | lower in fabric_node_names else 'external' -%}
+            {%- if include_fabric_links | bool or link_type == 'external' -%}
+              {#- sort key: node id + numeric port parts, so eth1/2 sorts before eth1/10 -#}
+              {%- set p = (iface | regex_findall('\\d+')) + ['0', '0', '0'] -%}
+              {%- set ns.rows = ns.rows + [[
+                    '%05d%04d%04d%04d' | format(node_id | int, p[0] | int, p[1] | int, p[2] | int),
+                    {
+                      'fabric': fabric_name,
+                      'pod': dn[1] | replace('pod-', '') | int,
+                      'node_id': node_id | int,
+                      'node_name': node_names[node_id] | default(''),
+                      'node_role': node_roles[node_id] | default(''),
+                      'local_interface': iface,
+                      'neighbor_name': nbr,
+                      'neighbor_port_id': a.portIdV | default(''),
+                      'neighbor_port_desc': (a.portDesc | default('')).split() | join(' '),
+                      'neighbor_mgmt_ip': '' if a.mgmtIp | default('unspecified') in ['unspecified', '0.0.0.0'] else a.mgmtIp,
+                      'neighbor_chassis_id': a.chassisIdV | default(''),
+                      'neighbor_capabilities': a.enCap | default(''),
+                      'link_type': link_type,
+                      'neighbor_description': (a.sysDesc | default('')).split() | join(' ')
+                    }
+                  ]] -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ ns.rows | sort(attribute='0') | map(attribute='1') | list }}
+      vars:
+        adjacencies: "{{ lldp_query.results | map(attribute='imdata') | flatten(levels=1) }}"
+
+    - name: Write combined export   # noqa: run-once[task]
+      run_once: true
+      vars:
+        export_rows: "{{ ansible_play_hosts | map('extract', hostvars, 'lldp_rows') | flatten(levels=1) }}"
+        export_file: "{{ export_dir }}/aci_lldp_neighbors_{{ export_stamp }}"
+      block:
+        - name: Timestamp this export
+          ansible.builtin.set_fact:
+            export_stamp: "{{ now(fmt='%Y%m%d-%H%M%S') }}"
+
+        - name: Ensure export directory exists
+          ansible.builtin.file:
+            path: "{{ export_dir }}"
+            state: directory
+            mode: "0755"
+
+        # Every field is quoted and embedded quotes doubled, so commas and quotes
+        # in port descriptions / sysDesc can't shift columns in Excel.
+        - name: Write CSV
+          ansible.builtin.copy:
+            dest: "{{ export_file }}.csv"
+            mode: "0644"
+            content: |
+              {{ export_columns | join(',') }}
+              {% for row in export_rows %}
+              "{{ export_columns | map('extract', row) | map('string') | map('replace', '"', '""') | join('","') }}"
+              {% endfor %}
+
+        - name: Write JSON
+          ansible.builtin.copy:
+            dest: "{{ export_file }}.json"
+            mode: "0644"
+            content: "{{ export_rows | to_nice_json(indent=2, sort_keys=false) }}"
+
+        - name: Summary
+          ansible.builtin.debug:
+            msg:
+              - "{{ export_rows | length }} LLDP adjacencies exported"
+              - "Per fabric: {{ dict(ansible_play_hosts | zip(ansible_play_hosts | map('extract', hostvars, 'lldp_rows') | map('length'))) }}"
+              - "{{ export_file }}.csv"
+              - "{{ export_file }}.json"

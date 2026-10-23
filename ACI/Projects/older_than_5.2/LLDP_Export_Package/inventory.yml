@@ -1,0 +1,17 @@
+---
+# inventory.yml - one host per ACI fabric. apic_host can be any APIC in that cluster.
+# The host name becomes the value of the 'fabric' column (override with fabric_name).
+all:
+  children:
+    apic:
+      hosts:
+        dc1-fabric:
+          apic_host: 10.30.3.108
+      vars:
+        apic_username: admin                    # a read-only account is enough
+        apic_password: Pjm12345!@#$%    # e.g. group_vars/apic/vault.yml (ansible-vault)
+        apic_validate_certs: false                     # false only if the APICs still use the self-signed cert
+
+        # Signature-based auth instead of a password (no aaaLogin on every API call):
+        # apic_private_key: /path/to/svc-ansible.key
+        # apic_certificate_name: svc-ansible

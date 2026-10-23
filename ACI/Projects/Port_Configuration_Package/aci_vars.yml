@@ -1,0 +1,42 @@
+# ── Fabric settings: filled in once by the ACI admin ───────────────────────────────────────────
+apic:
+  host: 10.30.3.108
+  username: admin
+  password: Pjm12345!@#$%
+  validate_certs: false
+tenant: TC_RND_LAB
+ap: TC_RND_AP
+pod: 1
+epgs:                                  # the VLANs people may use, and the EPG behind each
+  3: EPG_0003
+  4: EPG_0004
+  10: EPG_0010
+  34: EPG_0034
+  2001: EPG_2001
+  2011: EPG_2011
+  2012: EPG_2012
+  2013: EPG_2013
+  2014: EPG_2014
+  2015: EPG_2015
+  3000: EPG_3000
+  3003: EPG_3003
+  4000: EPG_4000
+access_policy_group: default_access_policy     # existing policy group used for single ports
+bundle_policies:                       # existing policies every new PC/vPC is built from
+  aep: RND_LAB_AEP        #   (any of: aep, link, lacp, cdp, lldp, mcp, stp, l2)
+  lacp: PC_LACP_Active
+  link: LINK_Auto_Negotiate
+  lldp: LLDP_Enabled
+
+# ── Connections: the only part anyone else edits ──────────────────────────────────────────────
+#   name:   what is plugged in; becomes the port description (and the PC/vPC name)
+#   type:   access (default) = each port on its own | pc = bundle on one leaf | vpc = bundle across two leafs
+#   ports:  leaf/card/port, e.g. 101/1/10
+#   vlans:  one VLAN = untagged port; several = trunk. `native:` adds an untagged VLAN to a trunk.
+#   state:  absent = strip these ports back to nothing
+# The listed ports end up carrying exactly these VLANs: anything else on them is removed.
+connections:
+  - name: esx01
+    #type: access
+    ports: [102/1/10]
+    vlans: [2001]

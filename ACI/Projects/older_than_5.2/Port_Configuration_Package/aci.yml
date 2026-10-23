@@ -1,0 +1,266 @@
+# Setup once:  pip install ansible-core && ansible-galaxy collection install cisco.aci
+# Plan:        ansible-playbook aci.yml --check     (validates and shows every change, sends no config)
+# Apply:       ansible-playbook aci.yml             (validates, snapshots, applies)
+# Other file:  add -e vars_file=<file>.yml
+- name: Configure ACI leaf ports
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: ["{{ vars_file | default('aci_vars.yml') }}"]
+  module_defaults:
+    group/cisco.aci.all:
+      host: "{{ apic.host }}"
+      username: "{{ apic.username }}"
+      password: "{{ apic.password }}"
+      validate_certs: "{{ apic.validate_certs }}"
+  vars:
+    policy_rn: {aep: attentp, link: hintfpol, lacp: lacplagp, cdp: cdpIfP, lldp: lldpIfP, mcp: mcpIfP, stp: ifPol, l2: l2IfP}
+    epg_dn: "uni/tn-{{ tenant }}/ap-{{ ap }}/epg-"
+
+    # APICs before 5.2(7): the interface profile of each leaf in the file (pattern, unless overridden).
+    leaf_profile: >-
+      {%- set d = {} -%}
+      {%- for c in connections | default([]) if interface_profile is defined -%}{%- for port in c.ports -%}
+        {%- set leaf = port.split('/')[0] -%}
+        {%- set _ = d.update({leaf: (interface_profile_overrides | default({}))[leaf | int] | default(interface_profile | replace('{leaf}', leaf))}) -%}
+      {%- endfor -%}{%- endfor -%}
+      {{- d -}}
+
+    # One target per binding path (a single port, or a whole PC/vPC) with the VLANs it should carry.
+    targets: >-
+      {%- set out = [] -%}
+      {%- for c in connections | default([]) -%}
+        {%- set state, kind = c.state | default('present'), c.type | default('access') -%}
+        {%- set single = c.vlans | default([]) | length == 1 and c.native is not defined -%}
+        {%- set want = [] -%}
+        {%- for v in c.vlans | default([]) if state == 'present' -%}
+          {%- set _ = want.append({'vlan': v, 'mode': 'untagged' if single else 'trunk'}) -%}
+        {%- endfor -%}
+        {%- if state == 'present' and c.native is defined -%}
+          {%- set _ = want.append({'vlan': c.native, 'mode': 'native'}) -%}
+        {%- endif -%}
+        {%- set paths = c.ports | map('regex_replace', '^(\\d+)/(.+)$', 'topology/pod-' ~ pod ~ '/paths-\\1/pathep-[eth\\2]') | list -%}
+        {%- set base = {'name': c.name, 'state': state, 'kind': kind, 'want': want} -%}
+        {%- if kind == 'access' -%}
+          {%- for port in c.ports -%}
+            {%- set _ = out.append(base | combine({'type': 'switch_port', 'leafs': [port.split('/')[0]], 'interface': port.split('/', 1)[1],
+                                                   'tdn': paths[loop.index0], 'members': [port], 'member_paths': [paths[loop.index0]]})) -%}
+          {%- endfor -%}
+        {%- else -%}
+          {%- set leafs = c.ports | map('split', '/') | map('first') | unique | sort -%}
+          {%- set _ = out.append(base | combine({'type': 'vpc' if kind == 'vpc' else 'port_channel', 'leafs': leafs, 'interface': c.name,
+                                                 'tdn': 'topology/pod-%s/%s-%s/pathep-[%s]' | format(pod, 'protpaths' if kind == 'vpc' else 'paths', leafs | join('-'), c.name),
+                                                 'members': c.ports, 'member_paths': paths})) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{- out -}}
+
+    # APICs before 5.2(7): ports existing selectors already cover, keyed "profile|card/port". A selector that
+    # holds only that port is reused; one that also holds other ports is reported instead.
+    covered: >-
+      {%- set d = {} -%}
+      {%- for r in existing_selectors.results -%}
+        {%- set blocks = r.imdata | map(attribute='infraPortBlk.attributes') | list -%}
+        {%- set owners = blocks | map(attribute='dn') | map('regex_replace', '/portblk-.*$', '') | list -%}
+        {%- for b in blocks -%}{%- for port in range(b.fromPort | int, b.toPort | int + 1) -%}
+          {%- set owner = b.dn | regex_replace('/portblk-.*$', '') -%}
+          {%- set _ = d.update({r.item ~ '|' ~ b.fromCard ~ '/' ~ port: {'selector': owner | regex_replace('^.*/hports-(.+)-typ-range$', '\\1'),
+                                'block': b.name, 'alone': b.fromPort == b.toPort and owners | select('eq', owner) | list | length == 1}}) -%}
+        {%- endfor -%}{%- endfor -%}
+      {%- endfor -%}
+      {{- d -}}
+    overlaps: >-
+      {%- set p = [] -%}
+      {%- for t in targets -%}{%- for m in t.members -%}
+        {%- set hit = covered[leaf_profile[m.split('/')[0]] ~ '|' ~ m.split('/', 1)[1]] | default({'alone': true}) -%}
+        {%- if not hit.alone -%}
+          {%- set _ = p.append(m ~ ' is in selector ' ~ hit.selector ~ ' together with other ports: give it a selector of its own first') -%}
+        {%- endif -%}
+      {%- endfor -%}{%- endfor -%}
+      {{- p -}}
+
+    # Mistakes in the file itself.
+    problems: >-
+      {%- set p = [] -%}
+      {%- for c in connections | default([]) if c.state | default('present') == 'present' -%}
+        {%- for v in c.vlans + ([c.native] if c.native is defined else []) if v not in epgs -%}
+          {%- set _ = p.append(c.name ~ ': VLAN ' ~ v ~ ' is not in the epgs list') -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {%- for t in targets if t.kind != 'access' and t.leafs | length != (2 if t.kind == 'vpc' else 1) -%}
+        {%- set _ = p.append(t.name ~ ': a ' ~ t.kind ~ ' needs its ports on ' ~ ('two leafs' if t.kind == 'vpc' else 'one leaf')) -%}
+      {%- endfor -%}
+      {{- p -}}
+
+    # Everything the change relies on, which must already exist on the APIC.
+    refs: >-
+      {%- set live = targets | selectattr('state', 'eq', 'present') | list -%}
+      {%- set r = live | map(attribute='member_paths') | flatten -%}
+      {%- for t in live -%}{%- for w in t.want -%}{%- set _ = r.append(epg_dn ~ epgs[w.vlan]) -%}{%- endfor -%}{%- endfor -%}
+      {%- set _ = r.append('uni/infra/funcprof/accportgrp-' ~ access_policy_group) -%}
+      {%- for k, v in bundle_policies.items() -%}{%- set _ = r.append('uni/infra/' ~ policy_rn[k] ~ '-' ~ v) -%}{%- endfor -%}
+      {%- for profile in leaf_profile.values() -%}{%- set _ = r.append('uni/infra/accportprof-' ~ profile) -%}{%- endfor -%}
+      {{- r | unique | sort -}}
+
+    # Bindings the listed ports should end up with; every other binding on them is removed.
+    wanted: >-
+      {%- set out = [] -%}
+      {%- for t, w in targets | subelements('want') -%}{%- set _ = out.append(epg_dn ~ epgs[w.vlan] ~ '/rspathAtt-[' ~ t.tdn ~ ']') -%}{%- endfor -%}
+      {{- out -}}
+    scope: "{{ targets | map(attribute='tdn') | list + targets | map(attribute='member_paths') | flatten }}"
+
+  tasks:
+    - name: Validate - file structure
+      ansible.builtin.validate_argument_spec:
+        argument_spec:
+          apic:
+            type: dict
+            required: true
+            options:
+              host: {type: str, required: true}
+              username: {type: str, required: true}
+              password: {type: str, required: true, no_log: true}
+              validate_certs: {type: bool, default: true}
+          tenant: {type: str, required: true}
+          ap: {type: str, required: true}
+          pod: {type: int, required: true}
+          epgs: {type: dict, required: true}
+          access_policy_group: {type: str, required: true}
+          interface_profile: {type: str}
+          interface_profile_overrides: {type: dict}
+          bundle_policies:
+            type: dict
+            required: true
+            options: {aep: {}, link: {}, lacp: {}, cdp: {}, lldp: {}, mcp: {}, stp: {}, l2: {}}
+          connections:
+            type: list
+            elements: dict
+            required_if: [[state, present, [vlans]]]
+            options:
+              name: {type: str, required: true}
+              type: {type: str, choices: [access, pc, vpc], default: access}
+              ports: {type: list, elements: str, required: true}
+              vlans: {type: list, elements: int}
+              native: {type: int}
+              state: {type: str, choices: [present, absent], default: present}
+
+    - name: Validate - file contents
+      ansible.builtin.assert:
+        that: problems | length == 0
+        fail_msg: "{{ problems }}"
+        quiet: true
+
+    - name: Validate - look up everything the change relies on
+      cisco.aci.aci_rest:
+        path: "/api/mo/{{ item }}.json"
+        method: get
+      loop: "{{ refs }}"
+      register: found
+      check_mode: false
+
+    - name: Validate - nothing is missing
+      ansible.builtin.assert:
+        that: missing | length == 0
+        fail_msg: "Not found on the APIC: {{ missing }}"
+        quiet: true
+      vars:
+        missing: "{{ found.results | rejectattr('imdata') | map(attribute='item') | list }}"
+
+    - name: Validate - read existing interface selectors (APIC before 5.2(7))
+      cisco.aci.aci_rest:
+        path: "/api/mo/uni/infra/accportprof-{{ item }}.json?query-target=subtree&target-subtree-class=infraPortBlk"
+        method: get
+      loop: "{{ leaf_profile.values() | unique }}"
+      register: existing_selectors
+      check_mode: false
+      when: interface_profile is defined
+
+    - name: Validate - no port shares an existing selector with other ports
+      ansible.builtin.assert:
+        that: overlaps | length == 0
+        fail_msg: "{{ overlaps }}"
+        quiet: true
+      when: interface_profile is defined
+
+    - name: Read current EPG bindings
+      cisco.aci.aci_rest:
+        path: "/api/mo/{{ epg_dn | regex_replace('/epg-$', '') }}.json?query-target=subtree&target-subtree-class=fvRsPathAtt"
+        method: get
+      register: current
+      check_mode: false
+
+    - name: Snapshot the fabric (skipped in check mode)
+      cisco.aci.aci_config_snapshot:
+        export_policy: ansible-pre-change
+        max_count: 10
+
+    - name: Remove VLANs the ports should no longer carry
+      cisco.aci.aci_rest:
+        path: "/api/mo/{{ item }}.json"
+        method: delete
+      loop: "{{ current.imdata | map(attribute='fvRsPathAtt.attributes') | selectattr('tDn', 'in', scope) | map(attribute='dn') | reject('in', wanted) | list }}"
+
+    - name: PC/vPC policy groups
+      cisco.aci.aci_interface_policy_leaf_policy_group:
+        policy_group: "{{ item.name }}"
+        lag_type: "{{ 'node' if item.kind == 'vpc' else 'link' }}"
+        aep: "{{ bundle_policies.aep | default(omit) }}"
+        link_level_policy: "{{ bundle_policies.link | default(omit) }}"
+        port_channel_policy: "{{ bundle_policies.lacp | default(omit) }}"
+        cdp_policy: "{{ bundle_policies.cdp | default(omit) }}"
+        lldp_policy: "{{ bundle_policies.lldp | default(omit) }}"
+        mcp_policy: "{{ bundle_policies.mcp | default(omit) }}"
+        stp_interface_policy: "{{ bundle_policies.stp | default(omit) }}"
+        l2_interface_policy: "{{ bundle_policies.l2 | default(omit) }}"
+        state: "{{ item.state }}"
+      loop: "{{ targets | rejectattr('kind', 'eq', 'access') }}"
+      loop_control: {label: "{{ item.state }} {{ item.kind }} {{ item.name }}"}
+
+    - name: Ports (per-port configuration, APIC 5.2(7)+)
+      cisco.aci.aci_interface_config:
+        node: "{{ item.1.split('/')[0] }}"
+        interface: "{{ item.1.split('/', 1)[1] }}"
+        interface_type: "{{ 'switch_port' if item.0.kind == 'access' else 'pc_or_vpc' }}"
+        policy_group: "{{ access_policy_group if item.0.kind == 'access' else item.0.name }}"
+        description: "{{ item.0.name }}"
+        state: "{{ item.0.state }}"
+      loop: "{{ targets | subelements('members') }}"
+      loop_control: {label: "{{ item.0.state }} {{ item.1 }} ({{ item.0.name }})"}
+      when: interface_profile is not defined
+
+    - name: Ports (interface selectors, APIC before 5.2(7))
+      cisco.aci.aci_access_port_to_interface_policy_leaf_profile:
+        interface_profile: "{{ leaf_profile[leaf] }}"
+        access_port_selector: "{{ covered[key].selector if key in covered else 'E1' ~ card ~ '_' ~ port_no }}"
+        port_blk: "{{ covered[key].block if key in covered else 'block1' }}"
+        from_card: "{{ card }}"
+        to_card: "{{ card }}"
+        from_port: "{{ port_no }}"
+        to_port: "{{ port_no }}"
+        leaf_port_blk_description: "{{ item.0.name }}"
+        policy_group: "{{ access_policy_group if item.0.kind == 'access' else item.0.name }}"
+        interface_type: "{{ item.0.type }}"
+        state: "{{ item.0.state }}"
+      loop: "{{ targets | subelements('members') }}"
+      loop_control: {label: "{{ item.0.state }} {{ item.1 }} ({{ item.0.name }})"}
+      when: interface_profile is defined
+      vars:
+        leaf: "{{ item.1.split('/')[0] }}"
+        card: "{{ item.1.split('/')[1] }}"
+        port_no: "{{ item.1.split('/')[2] }}"
+        key: "{{ leaf_profile[leaf] }}|{{ card }}/{{ port_no }}"
+
+    - name: VLANs
+      cisco.aci.aci_static_binding_to_epg:
+        tenant: "{{ tenant }}"
+        ap: "{{ ap }}"
+        epg: "{{ epgs[item.1.vlan] }}"
+        encap_id: "{{ item.1.vlan }}"
+        interface_mode: "{{ item.1.mode }}"
+        interface_type: "{{ item.0.type }}"
+        pod_id: "{{ pod }}"
+        leafs: "{{ item.0.leafs }}"
+        interface: "{{ item.0.interface }}"
+        deploy_immediacy: immediate
+      loop: "{{ targets | subelements('want') }}"
+      loop_control: {label: "vlan {{ item.1.vlan }} {{ item.1.mode }} -> {{ item.0.name }} {{ item.0.leafs | join('-') }}/{{ item.0.interface }}"}
