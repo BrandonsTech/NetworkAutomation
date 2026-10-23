@@ -10,32 +10,32 @@ topology:
       kind: cisco_n9kv
       image: vrnetlab/cisco_n9kv:10.5.2.F
       mgmt-ipv4: 172.20.20.11
-      startup-config: configs/r1.txt
+      startup-config: configs/r1.cfg
     r2:
       kind: cisco_n9kv
       image: vrnetlab/cisco_n9kv:10.5.2.F
       mgmt-ipv4: 172.20.20.12
-      startup-config: configs/r2.txt
+      startup-config: configs/r2.cfg
     r3:
       kind: cisco_n9kv
       image: vrnetlab/cisco_n9kv:10.5.2.F
       mgmt-ipv4: 172.20.20.13
-      startup-config: configs/r3.txt
+      startup-config: configs/r3.cfg
     r4:
       kind: cisco_n9kv
       image: vrnetlab/cisco_n9kv:10.5.2.F
       mgmt-ipv4: 172.20.20.14
-      startup-config: configs/r4.txt
+      startup-config: configs/r4.cfg
     switch1:
       kind: cisco_iol
       image: vrnetlab/cisco_iol:L2-17.18.02
       mgmt-ipv4: 172.20.20.21
-      startup-config: configs/switch1.txt
+      startup-config: configs/switch1.cfg
     switch2:
       kind: cisco_iol
       image: vrnetlab/cisco_iol:L2-17.18.02
       mgmt-ipv4: 172.20.20.22
-      startup-config: configs/switch2.txt
+      startup-config: configs/switch2.cfg
     host1:
       kind: linux
       image: alpine:latest

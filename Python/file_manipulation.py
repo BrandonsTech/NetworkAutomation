@@ -1,4 +1,4 @@
-read_file = open(r'C:\Cool\GitHub\NetworkAutomation\Python\hosts', 'r')
+read_file = open(r'/home/clab/git/NetworkAutomation/Python/hosts', 'r')
 contents = read_file.read().splitlines()
 print(contents)
 
@@ -19,7 +19,7 @@ for item in contents:
 for vlan in vlans:
     id = vlan.get('id')
     name = vlan.get('name')
-    with open('hostss', 'a') as f: #FILE MANIPULATION
+    with open('hosts', 'a') as f: #FILE MANIPULATION
         f.write(f'vlan {id}\n')
         f.write(f'   name {name}\n')
 
