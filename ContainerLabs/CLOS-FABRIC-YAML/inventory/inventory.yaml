@@ -1,0 +1,179 @@
+---
+devices:
+  spine1:
+    role: spine
+    platform: eos
+    mgmt_ip: 172.20.20.11/24
+    loopback0: 10.0.0.1/32
+    bgp:
+      asn: 65000
+      router_id: 10.0.0.1
+      neighbors:
+        - peer_name: leaf1
+          peer_ip: 10.1.1.1
+          peer_asn: 65101
+        - peer_name: leaf2
+          peer_ip: 10.1.1.3
+          peer_asn: 65102
+        - peer_name: leaf3
+          peer_ip: 10.1.1.5
+          peer_asn: 65103
+        - peer_name: leaf4
+          peer_ip: 10.1.1.7
+          peer_asn: 65104
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_LEAF1_ETH1"
+        ipv4: 10.1.1.0/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_LEAF2_ETH1"
+        ipv4: 10.1.1.2/31
+        mtu: 9214
+      Ethernet3:
+        description: "P2P_TO_LEAF3_ETH1"
+        ipv4: 10.1.1.4/31
+        mtu: 9214
+      Ethernet4:
+        description: "P2P_TO_LEAF4_ETH1"
+        ipv4: 10.1.1.6/31
+        mtu: 9214
+
+  spine2:
+    role: spine
+    platform: eos
+    mgmt_ip: 172.20.20.12/24
+    loopback0: 10.0.0.2/32
+    bgp:
+      asn: 65000
+      router_id: 10.0.0.2
+      neighbors:
+        - peer_name: leaf1
+          peer_ip: 10.1.2.1
+          peer_asn: 65101
+        - peer_name: leaf2
+          peer_ip: 10.1.2.3
+          peer_asn: 65102
+        - peer_name: leaf3
+          peer_ip: 10.1.2.5
+          peer_asn: 65103
+        - peer_name: leaf4
+          peer_ip: 10.1.2.7
+          peer_asn: 65104
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_LEAF1_ETH2"
+        ipv4: 10.1.2.0/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_LEAF2_ETH2"
+        ipv4: 10.1.2.2/31
+        mtu: 9214
+      Ethernet3:
+        description: "P2P_TO_LEAF3_ETH2"
+        ipv4: 10.1.2.4/31
+        mtu: 9214
+      Ethernet4:
+        description: "P2P_TO_LEAF4_ETH2"
+        ipv4: 10.1.2.6/31
+        mtu: 9214
+
+  leaf1:
+    role: leaf
+    platform: eos
+    mgmt_ip: 172.20.20.21/24
+    loopback0: 10.0.0.11/32
+    bgp:
+      asn: 65101
+      router_id: 10.0.0.11
+      neighbors:
+        - peer_name: spine1
+          peer_ip: 10.1.1.0
+          peer_asn: 65000
+        - peer_name: spine2
+          peer_ip: 10.1.2.0
+          peer_asn: 65000
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_SPINE1_ETH1"
+        ipv4: 10.1.1.1/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_SPINE2_ETH1"
+        ipv4: 10.1.2.1/31
+        mtu: 9214
+
+  leaf2:
+    role: leaf
+    platform: eos
+    mgmt_ip: 172.20.20.22/24
+    loopback0: 10.0.0.12/32
+    bgp:
+      asn: 65102
+      router_id: 10.0.0.12
+      neighbors:
+        - peer_name: spine1
+          peer_ip: 10.1.1.2
+          peer_asn: 65000
+        - peer_name: spine2
+          peer_ip: 10.1.2.2
+          peer_asn: 65000
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_SPINE1_ETH2"
+        ipv4: 10.1.1.3/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_SPINE2_ETH2"
+        ipv4: 10.1.2.3/31
+        mtu: 9214
+
+  leaf3:
+    role: leaf
+    platform: eos
+    mgmt_ip: 172.20.20.23/32
+    loopback0: 10.0.0.13/32
+    bgp:
+      asn: 65103
+      router_id: 10.0.0.13
+      neighbors:
+        - peer_name: spine1
+          peer_ip: 10.1.1.4
+          peer_asn: 65000
+        - peer_name: spine2
+          peer_ip: 10.1.2.4
+          peer_asn: 65000
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_SPINE1_ETH3"
+        ipv4: 10.1.1.5/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_SPINE2_ETH3"
+        ipv4: 10.1.2.5/31
+        mtu: 9214
+
+  leaf4:
+    role: leaf
+    platform: eos
+    mgmt_ip: 172.20.20.24/24
+    loopback0: 10.0.0.14/32
+    bgp:
+      asn: 65104
+      router_id: 10.0.0.14
+      neighbors:
+        - peer_name: spine1
+          peer_ip: 10.1.1.6
+          peer_asn: 65000
+        - peer_name: spine2
+          peer_ip: 10.1.2.6
+          peer_asn: 65000
+    interfaces:
+      Ethernet1:
+        description: "P2P_TO_SPINE1_ETH4"
+        ipv4: 10.1.1.7/31
+        mtu: 9214
+      Ethernet2:
+        description: "P2P_TO_SPINE2_ETH4"
+        ipv4: 10.1.2.7/31
+        mtu: 9214

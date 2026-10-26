@@ -1,7 +1,8 @@
+---
 name: NEXUS-LAB
 
 mgmt:
-  network: clab                 # attach NetBox, CI runner, Prometheus etc. to this docker network
+  network: clab   # attach NetBox, CI runner, Prometheus etc. to this network
   ipv4-subnet: 172.20.20.0/24
 
 topology:
